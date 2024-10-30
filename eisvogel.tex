@@ -2,7 +2,7 @@
 % Copyright (c) 2017 - 2024, Pascal Wagler;
 % Copyright (c) 2014 - 2024, John MacFarlane
 %
-% All rights reserved.
+% ALL rights reserved.
 %
 % Redistribution and use in source and binary forms, with or without
 % modification, are permitted provided that the following conditions
@@ -394,6 +394,7 @@ $if(graphics)$
 \makeatletter
 \newsavebox\pandoc@box
 \newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  %% \resizebox{\textwidth}{!}{#1}
   \sbox\pandoc@box{#1}%
   \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
   \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
@@ -514,12 +515,14 @@ $if(csl-refs)$
 \newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 $endif$
+
 $if(lang)$
 \ifLuaTeX
 \usepackage[bidi=basic]{babel}
 \else
 \usepackage[bidi=default]{babel}
 \fi
+
 $if(babel-lang)$
 \babelprovide[main,import]{$babel-lang$}
 $if(mainfont)$
@@ -529,6 +532,7 @@ $if(mainfont)$
 \fi
 $endif$
 $endif$
+
 $for(babel-otherlangs)$
 \babelprovide[import]{$babel-otherlangs$}
 $endfor$
@@ -543,10 +547,107 @@ $if(selnolig-langs)$
   \usepackage[$for(selnolig-langs)$$it$$sep$,$endfor$]{selnolig} % disable illegal ligatures
 \fi
 $endif$
+
+\addto\extrasngerman{\def\figureautorefname{Abb.}}
+\addto\extrasgerman{\def\figureautorefname{Abb.}}
+\addto\extrasngerman{\def\pageautorefname{S.}}
+\addto\extrasgerman{\def\pageautorefname{S.}}
+
 $endif$
+%% end of lang
+
 $for(header-includes)$
 $header-includes$
 $endfor$
+
+%%
+%% paracol
+%%
+$if(paracol)$
+\usepackage{paracol}
+%% assume en on the left, de - on the right
+\newcommand{\en}{\switchcolumn*}
+\newcommand{\de}{\switchcolumn}
+\newcommand{\transStart}{\begin{paracol}{2}}
+\newcommand{\transStop}{\end{paracol}}
+$endif$
+
+%%
+%%
+%% scifi boxes
+%%
+%%
+$if(scifi-boxes)$
+\usepackage[framemethod=TikZ,footnoteinside=false]{mdframed}
+
+\tikzset{
+  titregris/.style = {draw=gray, thick, fill=white, shading = scifititle, %
+  text=gray, rectangle, rounded corners, right, minimum height=.7cm}}
+
+\pgfdeclarehorizontalshading{scifibackground}{100bp}%
+  {color(0bp)=(green!40); color(100bp)=(black!5)}
+
+\pgfdeclarehorizontalshading{scifititle}{100bp}%
+  {color(0bp)=(red!40);color(100bp)=(black!5)}
+%% \newcounter{exercise}
+%% \renewcommand\theexercise{Exercise~n\arabic{exercise}}
+\makeatletter
+\def\mdf@@exercisepoints{}%new mdframed key:
+\define@key{mdf}{exercisepoints}{%
+  \def\mdf@@exercisepoints{#1}
+}
+\mdfdefinestyle{scifistyle}{%
+  %% outerlinewidth=5pt,innerlinewidth=0pt, outerlinecolor=red,roundcorner=5pt %
+  outerlinewidth=1em,outerlinecolor=white,%
+  leftmargin=0,rightmargin=0,%
+  middlelinewidth=1.2pt,roundcorner=5pt,linecolor=gray,%
+  apptotikzsetting={\tikzset{mdfbackground/.append style={%
+  shading = scifibackground}}}, %
+  %% innertopmargin=1.2\baselineskip, %
+  skipabove={\dimexpr2\baselineskip+\topskip\relax}, %
+  skipbelow={\dimexpr2\baselineskip+\topskip\relax}, %
+  needspace=3\baselineskip,
+  frametitlefont=\sffamily\bfseries
+  singleextra={%
+    \node[titregris,xshift=1cm] at (P−|O)
+    {~\mdf@frametitlefont{blah}\hbox{~}};
+  },
+  firstextra={%
+    \node[titregris,xshift=1cm] at (P−|O) %
+      {~\mdf@frametitlefont{blah}\hbox{~}};
+  },
+}
+\makeatother
+
+\usepackage{manyfoot}
+\newfootnote{A}
+
+
+%% \let\oldfootnote\footnote
+\renewcommand{\footnote}[1]{\footnoteA{#1}}
+
+\newenvironment{mdframedwithfoot}
+{
+    \savenotes
+    \begin{mdframed}
+    \stepcounter{footnote}
+    \renewcommand{\thempfootnote}{\arabic{footnote}}
+    }
+{
+    \end{mdframed}
+    \spewnotes
+}
+\newcommand\scifiBoxStart{\begin{mdframed}[style=scifistyle]}
+\newcommand\scifiBoxStop{\end{mdframed}}
+
+$endif$
+
+
+
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
 $if(dir)$
 \ifPDFTeX
   \TeXXeTstate=1
@@ -561,16 +662,31 @@ $if(natbib)$
 \bibliographystyle{$if(biblio-style)$$biblio-style$$else$plainnat$endif$}
 $endif$
 $if(biblatex)$
-\usepackage[$if(biblio-style)$style=$biblio-style$,$endif$$for(biblatexoptions)$$biblatexoptions$$sep$,$endfor$]{biblatex}
+\usepackage[$if(biblio-style)$style=$biblio-style$,$endif$$for(biblatexoptions)$$biblatexoptions$$sep$,$endfor$]{biblatex-chicago}
+
 $for(bibliography)$
 \addbibresource{$bibliography$}
 $endfor$
+
+%% \usepackage{bibentry}
+%% \nobibliography*
+%% \nobibliography{source/eeefff.org.bib}
+
 $endif$
+%% END BIBLATX
+
+\usepackage{xkvltxp}
+\usepackage[nomargin,inline,marginclue,draft]{fixme}
+\fxsetup{theme=color}
+
 $if(nocite-ids)$
 \nocite{$for(nocite-ids)$$it$$sep$, $endfor$}
 $endif$
 $if(csquotes)$
-\usepackage{csquotes}
+%% \usepackage[autostyle,german=quotes]{csquotes}
+%% \MakeAutoQuote{<}{>}
+%% \MakeOuterQuote{"}
+%% \MakeInnerQuote{'}
 $endif$
 \usepackage{bookmark}
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
@@ -611,7 +727,10 @@ $else$
 $endif$
 $endif$
   breaklinks=true,
-  pdfcreator={LaTeX via pandoc with the Eisvogel template}}
+  pdfcreator={LaTeX via pandoc with the Eisvogel template},
+  %% to avoid lualatex errors
+  %% draft
+  }
 $if(title)$
 \title{$title$$if(thanks)$\thanks{$thanks$}$endif$}
 $endif$
@@ -675,7 +794,14 @@ $endif$
 % When using babel or polyglossia with biblatex, loading csquotes is recommended
 % to ensure that quoted texts are typeset according to the rules of your main language.
 %
-\usepackage{csquotes}
+%% \makeatletter
+%% \def\@inpenc@undefined{}
+%% \makeatother
+
+\usepackage[autostyle,german=quotes]{csquotes}
+\MakeAutoQuote{«}{»}
+%% \MakeOuterQuote{"}
+%% \MakeInnerQuote{>>}
 
 %
 % captions
@@ -930,7 +1056,7 @@ $if(beamer)$
 $else$
 $if(disable-header-and-footer)$
 $else$
-\usepackage[headsepline,footsepline]{scrlayer-scrpage}
+\usepackage[headsepline,footsepline,automark]{scrlayer-scrpage}
 
 \newpairofpagestyles{eisvogel-header-footer}{
   \clearpairofpagestyles
@@ -964,6 +1090,21 @@ $endif$
 $endif$
 
 %%
+%%
+%% shorthands
+%%
+%%
+\newcommand{\pref}[1]{{(\autoref{#1}, \autopageref{#1})}}
+%% without ()
+\newcommand{\ppref}[1]{{\autoref{#1}, \autopageref{#1}}} 
+
+%%
+%%
+%% END OF SHORTHANDS
+%%
+%%
+
+%%
 %% end added
 %%
 
@@ -979,29 +1120,36 @@ $if(titlepage)$
 $if(titlepage-background)$
 \newgeometry{top=2cm, right=4cm, bottom=3cm, left=4cm}
 $else$
-\newgeometry{left=6cm}
+\newgeometry{left=2.5cm, bottom=1cm, right=2.5cm}
 $endif$
 $if(titlepage-color)$
 \definecolor{titlepage-color}{HTML}{$titlepage-color$}
 \newpagecolor{titlepage-color}\afterpage{\restorepagecolor}
 $endif$
+
 $if(titlepage-background)$
 \tikz[remember picture,overlay] \node[inner sep=0pt] at (current page.center){\includegraphics[width=\paperwidth,height=\paperheight]{$titlepage-background$}};
 $endif$
+
 \newcommand{\colorRule}[3][black]{\textcolor[HTML]{#1}{\rule{#2}{#3}}}
 \begin{flushleft}
 \noindent
 \\[-1em]
 \color[HTML]{$if(titlepage-text-color)$$titlepage-text-color$$else$5F5F5F$endif$}
-\makebox[0pt][l]{\colorRule[$if(titlepage-rule-color)$$titlepage-rule-color$$else$435488$endif$]{1.3\textwidth}{$if(titlepage-rule-height)$$titlepage-rule-height$$else$4$endif$pt}}
-\par
-\noindent
+
+{
+$university$ \\
+$department$ \\
+$subject$ \\
+$semester$ \\
+$professor$
+}
 
 $if(titlepage-background)$
 % The titlepage with a background image has other text spacing and text size
 {
   \setstretch{2}
-  \vfill
+  \vfill  
   \vskip -8em
   \noindent {\huge \textbf{\textsf{$title$}}}
   $if(subtitle)$
@@ -1016,14 +1164,39 @@ $else$
 {
   \setstretch{1.4}
   \vfill
-  \noindent {\huge \textbf{\textsf{$title$}}}
+
+  \hspace*{8cm}\makebox[0pt][l]{\colorRule[$if(titlepage-rule-color)$$titlepage-rule-color$$else$435488$endif$]{1.3\textwidth}{$if(titlepage-rule-height)$$titlepage-rule-height$$else$4$endif$pt}}
+  %% \par
+  %% \noindent
+
+  \vskip 2em
+  
+  \noindent {\centering \huge \textbf{\textsf{$title$}}}
   $if(subtitle)$
   \vskip 1em
   {\Large \textsf{$subtitle$}}
-  $endif$
+  $endif$  
   \vskip 2em
   \noindent {\Large \textsf{$for(author)$$author$$sep$, $endfor$}}
   \vfill
+  %% $if(matrikelnummer)$
+  %% \newline
+  %% \noindent {\textsf{Matrikelnummer: $matrikelnummer$}}  
+  %% $endif$
+
+
+  {
+  \setstretch{1.2}
+  vorgelegt am: $date$ \\
+  von: $author$ (Matr. Nr. $matrikelnummer$) \\
+  $address$ \\
+  $email$ 
+
+  \vskip 2em
+
+  $program$ \\
+  $semester$
+  }
 }
 $endif$
 
@@ -1032,12 +1205,17 @@ $if(titlepage-logo)$
 \includegraphics[width=$if(logo-width)$$logo-width$$else$35mm$endif$, left]{$titlepage-logo$}
 $endif$
 
-$if(titlepage-background)$
-$else$
-\textsf{$date$}
-$endif$
+%% $if(titlepage-background)$
+%% $else$
+%% \begin{center}
+%% \textsf{$date$}
+%% \end{center}
+%% $endif$
+
 \end{flushleft}
 \end{titlepage}
+\afterpage{\clearpage\newpage\thispagestyle{empty}\null\clearpage}
+
 \restoregeometry
 \pagenumbering{arabic}
 $endif$
@@ -1063,6 +1241,7 @@ $abstract$
 \end{abstract}
 $endif$
 $endif$
+
 
 $if(first-chapter)$
 \setcounter{chapter}{$first-chapter$}
@@ -1113,11 +1292,19 @@ $endif$
 $if(has-frontmatter)$
 \mainmatter
 $endif$
+%%
+%% body is here
+%%
 $body$
+
+%%
+%% END OF BODY
+%%
 
 $if(has-frontmatter)$
 \backmatter
 $endif$
+
 $if(natbib)$
 $if(bibliography)$
 $if(biblio-title)$
@@ -1138,6 +1325,8 @@ $endif$
 
 $endif$
 $endif$
+%% end of natbib
+
 $if(biblatex)$
 $if(beamer)$
 \begin{frame}[allowframebreaks]{$biblio-title$}
@@ -1145,10 +1334,12 @@ $if(beamer)$
   \printbibliography[heading=none]
 \end{frame}
 $else$
-\printbibliography$if(biblio-title)$[title=$biblio-title$]$endif$
+\printbibliography[$if(biblio-title)$title=$biblio-title$,$endif$heading=bibintoc]
 $endif$
 
 $endif$
+%% end of biblatex
+
 $for(include-after)$
 $include-after$
 
