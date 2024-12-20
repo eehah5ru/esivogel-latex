@@ -1049,6 +1049,14 @@ $endif$
 }
 $endif$
 
+%%
+%% access to current section names
+%% used in header and footer
+%%
+\makeatletter
+\newcommand*{\currentname}{\@currentlabelname}
+\makeatother
+
 %
 % header and footer
 %
@@ -1088,7 +1096,6 @@ contents={%
 $endif$
 $endif$
 $endif$
-
 
 %%
 %% list styles
@@ -1254,10 +1261,13 @@ $if(first-chapter)$
 \addtocounter{chapter}{-1}
 $endif$
 
+%%
+%% includes before
+%%
 $for(include-before)$
 $include-before$
-
 $endfor$
+
 $if(toc)$
 $if(toc-title)$
 \renewcommand*\contentsname{$toc-title$}
