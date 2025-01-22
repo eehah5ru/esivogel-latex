@@ -301,7 +301,7 @@ $endif$
 $if(verbatim-in-note)$
 \usepackage{fancyvrb}
 $endif$
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
 \definecolor{default-linkcolor}{HTML}{A50000}
 \definecolor{default-filecolor}{HTML}{A50000}
 \definecolor{default-citecolor}{HTML}{4077C0}
@@ -363,6 +363,8 @@ $highlighting-macros$
 $endif$
 $if(tables)$
 \usepackage{longtable,booktabs,array}
+% centered tabular cell with width
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
 $if(multirow)$
 \usepackage{multirow}
 $endif$
@@ -799,7 +801,7 @@ $endif$
 %% \makeatother
 
 \usepackage[autostyle,german=quotes]{csquotes}
-\MakeAutoQuote{«}{»}
+\MakeAutoQuote{$if(autoquote-begin)$$autoquote-begin$$else$«$endif$}{$if(autoquote-end)$$autoquote-end$$else$»$endif$}
 %% \MakeOuterQuote{"}
 %% \MakeInnerQuote{>>}
 
